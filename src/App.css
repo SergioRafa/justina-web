@@ -36,3 +36,10 @@
 }
 
 h2 { color: #2c3e50; margin-bottom: 15px; }
+
+/* Isso faz com que todo o texto dos cards e inputs apareça em maiúsculo automaticamente */
+.info h3, 
+.info p strong, 
+.agendamento-form input {
+  text-transform: uppercase;
+}
