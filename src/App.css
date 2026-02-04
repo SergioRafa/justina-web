@@ -43,3 +43,21 @@ h2 { color: #2c3e50; margin-bottom: 15px; }
 .agendamento-form input {
   text-transform: uppercase;
 }
+
+/* Padroniza o nome do paciente para sempre ser maiúsculo na lista */
+.info p strong {
+  text-transform: uppercase;
+}
+
+/* Padroniza o título do procedimento nos cards */
+.info h3 {
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+/* Deixa os textos das etiquetas de status mais nítidos */
+.status-tag {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
