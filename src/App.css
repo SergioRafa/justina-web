@@ -1,38 +1,49 @@
-.App {
+.hospital-header {
+  background-color: #1a3a5a;
+  color: white;
+  padding: 20px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.stats-row {
   display: flex;
-  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.stat-box {
+  background: #e1f5fe;
+  padding: 15px;
+  border-radius: 8px;
+  flex: 1;
+  border: 1px solid #b3e5fc;
+}
+
+.card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  border-left: 8px solid #3498db;
 }
 
-.App-link {
-  color: #61dafb;
+.status-tag {
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.85rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+.em-sala { background: #fff9c4; color: #fbc02d; }
+.agendado { background: #e3f2fd; color: #1976d2; }
+.concluido { background: #c8e6c9; color: #388e3c; }
