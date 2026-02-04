@@ -60,6 +60,13 @@ function App() {
     setCirurgias(listaFiltrada);
   };
 
+  const alternarStatus = (id) => {
+    const novosStatus = { "Agendado": "Em Sala", "Em Sala": "Concluído", "Concluído": "Agendado" };
+    setCirurgias(cirurgias.map(c => 
+      c.id === id ? { ...c, status: novosStatus[c.status] } : c
+    ));
+  };
+
   return (
     <div className="App">
       <header className="hospital-header">
