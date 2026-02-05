@@ -89,47 +89,99 @@ function App() {
           </div>
         )}
 
-        {/* ABA: PORTAL DO MÉDICO */}
-        {abaAtiva === 'medico' && (
-          <div className="secao-medico">
-            {passoMedico === 1 && (
-              <div className="card-portal">
-                <h2>🩺 Identificação</h2>
-                <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
-                <input type="email" placeholder="E-mail" onChange={e => setDadosSimulacao({...dadosSimulacao, email: e.target.value})} />
-                <button onClick={() => setPassoMedico(2)}>Entrar</button>
-              </div>
-            )}
+     {/* ABA: PORTAL DO MÉDICO */}
+{abaAtiva === 'medico' && (
+  <div className="secao-medico">
+    {passoMedico === 1 && (
+      <div className="card-portal">
+        <h2>🩺 Identificação</h2>
+        <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
+        <input type="email" placeholder="E-mail" onChange={e => setDadosSimulacao({...dadosSimulacao, email: e.target.value})} />
+        <button className="btn-portal" onClick={() => setPassoMedico(2)}>Entrar</button>
+      </div>
+    )}
 
-            {passoMedico === 2 && (
-              <div className="card-portal">
-                <h2>Selecione o Paciente</h2>
-                <div className="grade-pacientes">
-                  {Object.keys(CASOS_CLINICOS).map(chave => (
-                    <button key={chave} className="card-paciente" onClick={() => { 
-                      setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
-                      setPassoMedico(3);
-                    }}>
-                      <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
-                      <strong>{CASOS_CLINICOS[chave].nome}</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+    {passoMedico === 2 && (
+      <div className="card-portal">
+        <h2>Selecione o Paciente</h2>
+        <div className="grade-pacientes">
+          {Object.keys(CASOS_CLINICOS).map(chave => (
+            <button key={chave} className="card-paciente" onClick={() => { 
+              setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
+              setPassoMedico(3);
+            }}>
+              <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
+              <strong>{CASOS_CLINICOS[chave].nome}</strong>
+            </button>
+          ))}
+        </div>
+        <button className="btn-voltar" style={{marginTop: '20px'}} onClick={() => setPassoMedico(1)}>⬅️ Sair</button>
+      </div>
+    )}
 
-            {passoMedico === 3 && (
-              <div className="card-portal">
-                <h2>Configurar: {dadosSimulacao.paciente}</h2>
-                <div className="lado-botoes">
-                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
-                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
-                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Bilateral'})}>Bilateral</button>
-                </div>
-                <p>Selecionado: <strong>{dadosSimulacao.lado}</strong></p>
-                {dadosSimulacao.lado && <button onClick={() => setPassoMedico(4)}>Gerar Feedback</button>}
-              </div>
-            )}
+    {passoMedico === 3 && (
+      <div className="card-portal">
+        <h2>Configurar: {dadosSimulacao.paciente}</h2>
+        <p>Escolha a Lateralidade:</p>
+        
+        <div className="lado-botoes">
+          <button className={`btn-lado ${dadosSimulacao.lado === 'Direito' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
+          <button className={`btn-lado ${dadosSimulacao.lado === 'Esquerdo' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
+          <button className={`btn-lado ${dadosSimulacao.lado === 'Bilateral' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Bilateral'})}>Bilateral</button>
+        </div>
+
+        <div className="botoes-navegacao" style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button className="btn-voltar" onClick={() => setPassoMedico(2)}>⬅️ Voltar</button>
+          {dadosSimulacao.lado && (
+            <button className="btn-proximo" onClick={() => setPassoMedico(4)}>Gerar Feedback ➡️</button>
+          )}
+        </div>
+      </div>
+    )}
+
+    {passoMedico === 4 && (
+      <div className="card-portal">
+        <h2>📊 Resultado Final</h2>
+        <div className="resultado-caixa">
+          <p><strong>CRM:</strong> {dadosSimulacao.crm}</p>
+          <p><strong>Paciente:</strong> {dadosSimulacao.paciente}</p>
+          <p><strong>Lado:</strong> {dadosSimulacao.lado}</p>
+          <div className="alerta-clinico">
+            {dadosSimulacao.paciente.includes("Enzo") && <p>⚠️ Cuidado: Paciente Pediátrico! Ajustar dosagem de contraste.</p>}
+            {dadosSimulacao.lado === "Bilateral" && <p>🚨 Risco: Cirurgia Bilateral detectada. Necessário equipe dupla.</p>}
+            <p>✅ Protocolo de segurança Justina Renal validado.</p>
+          </div>
+        </div>
+        <button className="btn-portal" style={{backgroundColor: '#3498db'}} onClick={() => { setPassoMedico(1); setDadosSimulacao({...dadosSimulacao, lado: ''}); }}>🔄 Nova Simulação</button>
+      </div>
+    )}
+  </div>
+)}
+          
+
+          {/* PASSO 3: CONFIGURAÇÃO CIRÚRGICA */}
+{passoMedico === 3 && (
+  <div className="card-portal">
+    <h2>Configurar: {dadosSimulacao.paciente}</h2>
+    
+    <div className="lado-botoes">
+      <button className="btn-lado" onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
+      <button className="btn-lado" onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
+    </div>
+
+    <div className="botoes-navegacao" style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+      <button className="btn-voltar" onClick={() => setPassoMedico(2)}>
+        ⬅️ Voltar
+      </button>
+      
+      {dadosSimulacao.lado && (
+        <button className="btn-proximo" onClick={() => setPassoMedico(4)}>
+          Gerar Feedback ➡️
+        </button>
+      )}
+    </div>
+  </div>
+)}
 
             {/* PASSO 4: FEEDBACK FINAL */}
             {passoMedico === 4 && (

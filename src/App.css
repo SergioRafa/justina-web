@@ -198,3 +198,46 @@ button {
   color: #95a5a6;
   font-size: 0.9rem;
 }
+
+.btn-voltar {
+  background-color: #95a5a6; /* Cinza elegante */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  flex: 1;
+  transition: 0.3s;
+}
+
+.btn-voltar:hover {
+  background-color: #7f8c8d;
+}
+
+.btn-proximo {
+  background-color: #2ecc71; /* Verde sucesso */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  flex: 2; /* O botão de avançar é maior para guiar o usuário */
+}
+
+.lado-botoes {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.btn-lado {
+  background: #ecf0f1;
+  border: 2px solid #bdc3c7;
+  padding: 15px;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.btn-lado:focus {
+  border-color: #3498db;
+  background: #ebf5fb;
+}
+
