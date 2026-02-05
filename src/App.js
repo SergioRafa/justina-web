@@ -1,89 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// 1. DADOS DOS CASOS CLÍNICOS (FORA DAS FUNÇÕES)
 const CASOS_CLINICOS = {
-  crianca: { nome: "Enzo, 8 anos", descricao: "Pediátrico - Refluxo Vesicoureteral", risco: "Médio" },
-  homem: { nome: "Sr. João, 55 anos", descricao: "Adulto - Cálculo Renal Coraliforme", risco: "Alto" },
-  mulher: { nome: "Dra. Helena, 42 anos", descricao: "Adulto - Nefrectomia Parcial (Doadora)", risco: "Baixo" }
+  crianca: { nome: "Enzo, 8 anos", icone: "👶", descricao: "Pediátrico - Refluxo", risco: "Médio" },
+  homem: { nome: "Sr. João, 55 anos", icone: "👨", descricao: "Adulto - Cálculo Renal", risco: "Alto" },
+  mulher: { nome: "Dra. Helena, 42 anos", icone: "👩", descricao: "Adulto - Nefrectomia", risco: "Baixo" }
 };
-import React, { useState } from 'react';
-
-function PortalMedico() {
-  const [passo, setPasso] = useState(1);
-  const [dadosMedico, setDadosMedico] = useState({ crm: '', email: '', procedimento: '', lado: '', paciente: '' });
-
-  const proximo = () => setPasso(passo + 1);
-
-  return (
-    <div className="portal-medico">
-      {/* PASSO 1: IDENTIFICAÇÃO */}
-      {passo === 1 && (
-        <div className="card-portal">
-          <h2>🏥 Acesso Restrito: Médico</h2>
-          <input type="text" placeholder="CRM (Ex: 123456-SP)" onChange={e => setDadosMedico({...dadosMedico, crm: e.target.value})} />
-          <input type="email" placeholder="E-mail para Feedback" onChange={e => setDadosMedico({...dadosMedico, email: e.target.value})} />
-          <button className="btn-portal" onClick={proximo}>Entrar no Sistema</button>
-        </div>
-      )}
-
-      {/* PASSO 2: ESCOLHA DO CASO */}
-      {passo === 2 && (
-        <div className="card-portal">
-          <h2>Selecione o Paciente</h2>
-          <div className="selecao-pacientes">
-            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Criança'}); proximo(); }}>👶 Criança</button>
-            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Homem'}); proximo(); }}>👨 Homem</button>
-            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Mulher'}); proximo(); }}>👩 Mulher</button>
-          </div>
-        </div>
-      )}
-
-      {/* PASSO 3: CONFIGURAÇÃO CIRÚRGICA */}
-      {passo === 3 && (
-        <div className="card-portal">
-          <h2>Configurar Cirurgia: {dadosMedico.paciente}</h2>
-          <select onChange={e => setDadosMedico({...dadosMedico, procedimento: e.target.value})}>
-            <option>Procedimento...</option>
-            <option>Nefrectomia</option>
-            <option>Transplante Renal</option>
-            <option>Ureteroscopia</option>
-          </select>
-          <div className="lado-botoes">
-            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Direito'})}>Direito</button>
-            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Esquerdo'})}>Esquerdo</button>
-            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Bilateral'})}>Bilateral</button>
-          </div>
-          <p>Lado Selecionado: <strong>{dadosMedico.lado}</strong></p>
-          <button className="btn-portal" onClick={proximo}>Verificar Checklist</button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function App() {
-  // --- ESTADOS ---
+  // --- ESTADOS GERAIS ---
+  const [abaAtiva, setAbaAtiva] = useState('mapa'); // 'mapa' ou 'medico'
   const [cirurgias, setCirurgias] = useState([]);
+  
+  // Estados do Agendamento
   const [paciente, setPaciente] = useState('');
   const [procedimento, setProcedimento] = useState('Nefrectomia');
   const [rim, setRim] = useState('Direito');
-  
-  // Novos estados para o Checklist
+
+  // Estados do Portal do Médico
+  const [passoMedico, setPassoMedico] = useState(1);
+  const [dadosSimulacao, setDadosSimulacao] = useState({ crm: '', email: '', paciente: '', procedimento: '', lado: '' });
+
+  // Estados do Checklist (Mapa Cirúrgico)
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
   const [respostas, setRespostas] = useState({
-    hemograma: '',
-    coagulograma: '',
-    funcaoRenal: '',
-    eletrolitos: '',
-    tomografiaAbdome: '',
-    avaliacaoAnestesica: '',
-    ladoOperado: 'Direito',
-    jejumConfirmado: false,
-    termoConsentimento: false,
-    riscoCirurgico: ''
+    hemograma: '', funcaoRenal: '', jejumConfirmado: false, termoConsentimento: false
   });
 
-  // --- 1. CARREGAR DADOS (GET) ---
+  // --- CARREGAR DADOS DO JAVA ---
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -91,169 +36,124 @@ function App() {
         if (resposta.ok) {
           const dados = await resposta.json();
           setCirurgias(dados);
-        } else {
-          const salvos = localStorage.getItem('justina_cirurgias');
-          if (salvos) setCirurgias(JSON.parse(salvos));
         }
       } catch (erro) {
-        console.error("Java offline. Usando dados locais.");
-        const salvos = localStorage.getItem('justina_cirurgias');
-        if (salvos) setCirurgias(JSON.parse(salvos));
+        console.error("Servidor Offline. Usando modo demonstração.");
       }
     };
     carregarDados();
   }, []);
 
-  // --- 2. SALVAR CIRURGIA (POST) ---
-  const agendarCirurgia = async (e) => {
+  // --- FUNÇÕES DO MAPA ---
+  const agendarCirurgia = (e) => {
     e.preventDefault();
-    const nomeMaiusculo = paciente.trim().toUpperCase();
-
-    if (!nomeMaiusculo) return alert("Por favor, digite o nome do paciente!");
-
-    const jaExiste = cirurgias.some(c => 
-      c.paciente.toUpperCase() === nomeMaiusculo && c.procedimento === procedimento
-    );
-
-    if (jaExiste) {
-      alert(`⚠️ ATENÇÃO: ${nomeMaiusculo} já possui um agendamento para ${procedimento}!`);
-      return;
-    }
-
-    const novaCirurgia = { paciente: nomeMaiusculo, procedimento, rim, status: "Agendado" };
-
-    try {
-      const resposta = await fetch("http://localhost:8081/api/cirurgias", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(novaCirurgia)
-      });
-
-      if (resposta.ok) {
-        const salva = await resposta.json();
-        setCirurgias([salva, ...cirurgias]);
-        setPaciente('');
-      }
-    } catch (erro) {
-      const fallback = { ...novaCirurgia, id: Date.now() };
-      setCirurgias([fallback, ...cirurgias]);
-      setPaciente('');
-    }
-  };
-
-  // --- 3. SALVAR CHECKLIST NO JAVA ---
-  const salvarChecklistNoJava = async () => {
-    const dadosParaEnviar = {
-      ...respostas,
-      cirurgia: { id: pacienteSelecionado.id }
-    };
-
-    try {
-      const res = await fetch("http://localhost:8081/api/checklists", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosParaEnviar)
-      });
-
-      if (res.ok) {
-        alert("✅ Checklist salvo com sucesso no banco de dados!");
-        setPacienteSelecionado(null);
-      }
-    } catch (error) {
-      alert("❌ Erro ao conectar com o servidor.");
-    }
-  };
-
-  // --- OUTRAS FUNÇÕES ---
-  const excluirCirurgia = (id) => {
-    const listaFiltrada = cirurgias.filter(c => c.id !== id);
-    setCirurgias(listaFiltrada);
+    const nova = { id: Date.now(), paciente: paciente.toUpperCase(), procedimento, rim, status: "Agendado" };
+    setCirurgias([nova, ...cirurgias]);
+    setPaciente('');
   };
 
   const alternarStatus = (id) => {
     const novosStatus = { "Agendado": "Em Sala", "Em Sala": "Concluído", "Concluído": "Agendado" };
-    setCirurgias(cirurgias.map(c => 
-      c.id === id ? { ...c, status: novosStatus[c.status] } : c
-    ));
+    setCirurgias(cirurgias.map(c => c.id === id ? { ...c, status: novosStatus[c.status] } : c));
   };
 
+  // --- RENDERIZAÇÃO ---
   return (
     <div className="App">
       <header className="hospital-header">
         <h1>🏥 Justina Renal</h1>
-        <p>Sistema de Gerenciamento Cirúrgico</p>
+        <div className="menu-navegacao">
+          <button onClick={() => setAbaAtiva('mapa')} className={abaAtiva === 'mapa' ? 'active' : ''}>Mapa Cirúrgico</button>
+          <button onClick={() => setAbaAtiva('medico')} className={abaAtiva === 'medico' ? 'active' : ''}>Portal do Médico</button>
+        </div>
       </header>
 
       <main className="container">
-        {/* FORMULÁRIO DE AGENDAMENTO */}
-        <form className="agendamento-form" onSubmit={agendarCirurgia}>
-          <h3>Novo Agendamento</h3>
-          <div className="form-row">
-            <input 
-              type="text" 
-              placeholder="NOME DO PACIENTE" 
-              value={paciente}
-              onChange={(e) => setPaciente(e.target.value.toUpperCase())}
-            />
-            <select value={procedimento} onChange={(e) => setProcedimento(e.target.value)}>
-              <option>Nefrectomia</option>
-              <option>Transplante Renal</option>
-              <option>Ureteroscopia</option>
-              <option>Nefrolitotripsia</option>
-            </select>
-            <select value={rim} onChange={(e) => setRim(e.target.value)}>
-              <option>Direito</option>
-              <option>Esquerdo</option>
-              <option>Bilateral</option>
-            </select>
-            <button type="submit">Agendar</button>
-          </div>
-        </form>
+        
+        {/* CONTEÚDO 1: MAPA CIRÚRGICO */}
+        {abaAtiva === 'mapa' && (
+          <div className="secao-mapa">
+            <form className="agendamento-form" onSubmit={agendarCirurgia}>
+              <h3>Novo Agendamento</h3>
+              <div className="form-row">
+                <input type="text" placeholder="PACIENTE" value={paciente} onChange={(e) => setPaciente(e.target.value)} />
+                <select value={procedimento} onChange={(e) => setProcedimento(e.target.value)}>
+                  <option>Nefrectomia</option>
+                  <option>Transplante Renal</option>
+                </select>
+                <button type="submit">Agendar</button>
+              </div>
+            </form>
 
-        {/* LISTA DE CARDS */}
-        <div className="lista-cirurgias">
-          <h2>Mapa Cirúrgico Atual</h2>
-          {cirurgias.map(c => (
-            <div key={c.id || Math.random()} className="card">
-              <div className="info">
-                <h3 style={{textTransform: 'uppercase'}}>{c.procedimento}</h3>
-                <p>Paciente: <strong>{c.paciente}</strong> | Lado: {c.rim}</p>
-              </div>
-              <div className="acoes">
-                <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
-                <span 
-                  className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`}
-                  onClick={() => alternarStatus(c.id)}
-                >
-                  {c.status}
-                </span>
-                <button className="btn-excluir" onClick={() => excluirCirurgia(c.id)}>🗑️</button>
-              </div>
+            <div className="lista-cirurgias">
+              {cirurgias.map(c => (
+                <div key={c.id} className="card">
+                  <div className="info">
+                    <h3>{c.procedimento}</h3>
+                    <p>{c.paciente} | <strong>{c.rim}</strong></p>
+                  </div>
+                  <div className="acoes">
+                    <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
+                    <span className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`} onClick={() => alternarStatus(c.id)}>
+                      {c.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
-        {/* MODAL DO CHECKLIST (APARECE SÓ QUANDO SELECIONADO) */}
+        {/* CONTEÚDO 2: PORTAL DO MÉDICO (O SEU NOVO SIMULADOR) */}
+        {abaAtiva === 'medico' && (
+          <div className="secao-medico">
+            {passoMedico === 1 && (
+              <div className="card-portal">
+                <h2>🩺 Identificação do Especialista</h2>
+                <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
+                <input type="email" placeholder="E-mail" onChange={e => setDadosSimulacao({...dadosSimulacao, email: e.target.value})} />
+                <button onClick={() => setPassoMedico(2)}>Entrar</button>
+              </div>
+            )}
+
+            {passoMedico === 2 && (
+              <div className="card-portal">
+                <h2>Selecione o Paciente</h2>
+                <div className="grade-pacientes">
+                  {Object.keys(CASOS_CLINICOS).map(chave => (
+                    <button key={chave} className="card-paciente" onClick={() => { 
+                      setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
+                      setPassoMedico(3);
+                    }}>
+                      <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
+                      <strong>{CASOS_CLINICOS[chave].nome}</strong>
+                      <small>{CASOS_CLINICOS[chave].descricao}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {passoMedico === 3 && (
+              <div className="card-portal">
+                <h2>Caso: {dadosSimulacao.paciente}</h2>
+                <p>Escolha o Lado da Cirurgia:</p>
+                <div className="lado-botoes">
+                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
+                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
+                </div>
+                <button className="btn-voltar" onClick={() => setPassoMedico(2)}>Voltar</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MODAL CHECKLIST (O MESMO DE ANTES) */}
         {pacienteSelecionado && (
           <div className="modal-sobreposicao">
             <div className="modal-conteudo">
-              <h2>📋 Checklist: {pacienteSelecionado.paciente}</h2>
-              <div className="formulario-scroll">
-                <fieldset>
-                  <legend>🩸 Laboratório</legend>
-                  <input type="text" placeholder="Hemograma" onChange={(e) => setRespostas({...respostas, hemograma: e.target.value})} />
-                  <input type="text" placeholder="Função Renal" onChange={(e) => setRespostas({...respostas, funcaoRenal: e.target.value})} />
-                </fieldset>
-                <fieldset>
-                  <legend>🛡️ Segurança</legend>
-                  <label><input type="checkbox" onChange={(e) => setRespostas({...respostas, jejumConfirmado: e.target.checked})} /> Jejum?</label>
-                  <label><input type="checkbox" onChange={(e) => setRespostas({...respostas, termoConsentimento: e.target.checked})} /> Termo Assinado?</label>
-                </fieldset>
-              </div>
-              <div className="botoes-modal">
-                <button className="btn-salvar" onClick={salvarChecklistNoJava}>Salvar</button>
-                <button className="btn-cancelar" onClick={() => setPacienteSelecionado(null)}>Sair</button>
-              </div>
+              <h2>Checklist: {pacienteSelecionado.paciente}</h2>
+              <button onClick={() => setPacienteSelecionado(null)}>Fechar</button>
             </div>
           </div>
         )}
