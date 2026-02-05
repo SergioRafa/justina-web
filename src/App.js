@@ -2,62 +2,86 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  // 1. ESTADO INICIAL: Tenta buscar dados salvos no navegador. Se não houver, usa a lista padrão.
-  const [cirurgias, setCirurgias] = useState(() => {
-    const dadosSalvos = localStorage.getItem('justina_cirurgias');
-    return dadosSalvos ? JSON.parse(dadosSalvos) : [
-      { id: 1, paciente: "MARCOS PEREIRA", procedimento: "Nefrolitotripsia", rim: "Direito", status: "Em Sala" },
-      { id: 2, paciente: "JULIA COSTA", procedimento: "Transplante Renal", rim: "Bilateral", status: "Agendado" }
-    ];
-  });
-
+  const [cirurgias, setCirurgias] = useState([]);
   const [paciente, setPaciente] = useState('');
   const [procedimento, setProcedimento] = useState('Nefrectomia');
   const [rim, setRim] = useState('Direito');
 
-  // 2. PERSISTÊNCIA: Salva no LocalStorage automaticamente toda vez que a lista mudar
+  // 1. CARREGAR DADOS DO JAVA (GET)
   useEffect(() => {
-    localStorage.setItem('justina_cirurgias', JSON.stringify(cirurgias));
-  }, [cirurgias]);
+    const carregarDados = async () => {
+      try {
+        const resposta = await fetch("http://localhost:8080/api/cirurgias");
+        if (resposta.ok) {
+          const dados = await resposta.json();
+          setCirurgias(dados);
+        } else {
+          const salvos = localStorage.getItem('justina_cirurgias');
+          if (salvos) setCirurgias(JSON.parse(salvos));
+        }
+      } catch (erro) {
+        console.error("Java offline. Usando dados locais.");
+        const salvos = localStorage.getItem('justina_cirurgias');
+        if (salvos) setCirurgias(JSON.parse(salvos));
+      }
+    };
+    carregarDados();
+  }, []);
 
-  // 3. FUNÇÃO PARA AGENDAR: Cria a nova cirurgia e limpa o input
-  const agendarCirurgia = (e) => {
+  // 2. SALVAR NO JAVA (POST)
+  const agendarCirurgia = async (e) => {
     e.preventDefault();
-    
-    // 1. Transforma o nome em maiúsculo para comparar sem erro
     const nomeMaiusculo = paciente.trim().toUpperCase();
 
     if (!nomeMaiusculo) return alert("Por favor, digite o nome do paciente!");
 
-    // 2. TRAVA ANTI-DUPLICAÇÃO:
-    // O .some() percorre a lista e verifica se já existe alguém com o mesmo NOME e PROCEDIMENTO
     const jaExiste = cirurgias.some(c => 
-      c.paciente.toUpperCase() === nomeMaiusculo && 
-      c.procedimento === procedimento
+      c.paciente.toUpperCase() === nomeMaiusculo && c.procedimento === procedimento
     );
 
     if (jaExiste) {
-      alert(`⚠️ ATENÇÃO: ${nomeMaiusculo} já possui um agendamento para ${procedimento.toUpperCase()}!`);
-      return; // O 'return' para a função aqui e NÃO adiciona na lista
+      alert(`⚠️ ATENÇÃO: ${nomeMaiusculo} já possui um agendamento para ${procedimento}!`);
+      return;
     }
 
-    // 3. Se passou pela trava, adiciona normalmente
     const novaCirurgia = {
-      id: Date.now(),
       paciente: nomeMaiusculo,
       procedimento,
       rim,
       status: "Agendado"
     };
 
-    setCirurgias([novaCirurgia, ...cirurgias]);
-    setPaciente(''); 
+    try {
+      // Envia para o Java
+      const resposta = await fetch("http://localhost:8080/api/cirurgias", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novaCirurgia)
+      });
+
+      if (resposta.ok) {
+        const cirurgiaSalvaNoBanco = await resposta.json();
+        setCirurgias([cirurgiaSalvaNoBanco, ...cirurgias]);
+        setPaciente('');
+      } else {
+        alert("Erro ao salvar no banco de dados.");
+      }
+    } catch (erro) {
+      console.error("Erro de conexão:", erro);
+      // Plano B: Se o Java falhar, salva só na tela e no localStorage
+      const fallback = { ...novaCirurgia, id: Date.now() };
+      const novaLista = [fallback, ...cirurgias];
+      setCirurgias(novaLista);
+      localStorage.setItem('justina_cirurgias', JSON.stringify(novaLista));
+      setPaciente('');
+    }
   };
 
-  // 4. FUNÇÃO PARA EXCLUIR: Remove uma cirurgia da lista
+  // 3. EXCLUIR (DELETE) - Opcional: Integrar com Java depois
   const excluirCirurgia = (id) => {
     const listaFiltrada = cirurgias.filter(c => c.id !== id);
     setCirurgias(listaFiltrada);
+    localStorage.setItem('justina_cirurgias', JSON.stringify(listaFiltrada));
   };
 
   const alternarStatus = (id) => {
@@ -75,7 +99,6 @@ function App() {
       </header>
 
       <main className="container">
-        {/* FORMULÁRIO DE AGENDAMENTO */}
         <form className="agendamento-form" onSubmit={agendarCirurgia}>
           <h3>Novo Agendamento</h3>
           <div className="form-row">
@@ -105,13 +128,17 @@ function App() {
           {cirurgias.length === 0 && <p style={{textAlign: 'center', color: '#666'}}>Nenhuma cirurgia agendada.</p>}
           
           {cirurgias.map(c => (
-            <div key={c.id} className="card">
+            <div key={c.id || Math.random()} className="card">
               <div className="info">
                 <h3 style={{textTransform: 'uppercase'}}>{c.procedimento}</h3>
                 <p>Paciente: <strong>{c.paciente}</strong> | Lado: {c.rim}</p>
               </div>
               <div className="acoes">
-                <span className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`}>
+                <span 
+                  className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`}
+                  onClick={() => alternarStatus(c.id)}
+                  style={{cursor: 'pointer'}}
+                >
                   {c.status}
                 </span>
                 <button className="btn-excluir" onClick={() => excluirCirurgia(c.id)}>🗑️</button>
