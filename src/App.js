@@ -19,7 +19,7 @@ function App() {
     crm: '', email: '', paciente: '', procedimento: '', lado: '' 
   });
 
-  // --- O QUESTIONÁRIO QUE VOCÊ CRIOU ---
+  // --- O QUESTIONÁRIO ---
   const [respostas, setRespostas] = useState({
     hemograma: '', coagulograma: '', funcaoRenal: '', eletrolitos: '',
     tomografiaAbdome: '', avaliacaoAnestesica: '', ladoOperado: 'Direito',
@@ -107,33 +107,62 @@ function App() {
               </div>
             )}
 
-            {passoMedico === 3 && (
-              <div className="card-portal">
-                <h2>📋 Checklist Técnico: {dadosSimulacao.paciente}</h2>
-                <div className="formulario-scroll">
-                  <fieldset>
-                    <legend>Exames</legend>
-                    <input type="text" placeholder="Hemograma" value={respostas.hemograma} onChange={e => setRespostas({...respostas, hemograma: e.target.value})} />
-                    <input type="text" placeholder="Função Renal" value={respostas.funcaoRenal} onChange={e => setRespostas({...respostas, funcaoRenal: e.target.value})} />
-                  </fieldset>
-                  <fieldset>
-                    <legend>Lateralidade</legend>
-                    <select value={respostas.ladoOperado} onChange={e => setRespostas({...respostas, ladoOperado: e.target.value})}>
-                      <option value="Direito">Direito</option>
-                      <option value="Esquerdo">Esquerdo</option>
-                      <option value="Bilateral">Bilateral</option>
-                    </select>
-                  </fieldset>
-                </div>
-                <div className="botoes-navegacao">
-                  <button className="btn-voltar" onClick={() => setPassoMedico(2)}>⬅️ Voltar</button>
-                  <button className="btn-proximo" onClick={() => {
-                    setDadosSimulacao({...dadosSimulacao, lado: respostas.ladoOperado});
-                    setPassoMedico(4);
-                  }}>Ver Resultado ➡️</button>
-                </div>
-              </div>
-            )}
+          {passoMedico === 3 && (
+  <div className="card-portal">
+    <h2>📋 Checklist Clínico: {dadosSimulacao.paciente}</h2>
+    
+    <div className="formulario-scroll" style={{ textAlign: 'left', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+      
+      <fieldset style={{ marginBottom: '15px', padding: '15px', borderRadius: '8px', border: '1px solid #ddd' }}>
+        <legend style={{ fontWeight: 'bold', color: '#2c3e50' }}>🔬 Laboratório</legend>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <input type="text" placeholder="Hemograma" value={respostas.hemograma} onChange={e => setRespostas({...respostas, hemograma: e.target.value})} />
+          <input type="text" placeholder="Coagulograma" value={respostas.coagulograma} onChange={e => setRespostas({...respostas, coagulograma: e.target.value})} />
+          <input type="text" placeholder="Função Renal (Creatinina)" value={respostas.funcaoRenal} onChange={e => setRespostas({...respostas, funcaoRenal: e.target.value})} />
+          <input type="text" placeholder="Eletrólitos" value={respostas.eletrolitos} onChange={e => setRespostas({...respostas, eletrolitos: e.target.value})} />
+        </div>
+      </fieldset>
+
+      <fieldset style={{ marginBottom: '15px', padding: '15px', borderRadius: '8px', border: '1px solid #ddd' }}>
+        <legend style={{ fontWeight: 'bold', color: '#2c3e50' }}>📸 Imagem e Anestesia</legend>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <input type="text" placeholder="Tomografia de Abdome" value={respostas.tomografiaAbdome} onChange={e => setRespostas({...respostas, tomografiaAbdome: e.target.value})} />
+          <input type="text" placeholder="Avaliação Anestésica" value={respostas.avaliacaoAnestesica} onChange={e => setRespostas({...respostas, avaliacaoAnestesica: e.target.value})} />
+        </div>
+      </fieldset>
+
+      <fieldset style={{ marginBottom: '15px', padding: '15px', borderRadius: '8px', border: '1px solid #ddd' }}>
+        <legend style={{ fontWeight: 'bold', color: '#2c3e50' }}>⚖️ Segurança e Lateralidade</legend>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <label>Lado a ser operado:</label>
+          <select value={respostas.ladoOperado} onChange={e => setRespostas({...respostas, ladoOperado: e.target.value})}>
+            <option value="Direito">Direito</option>
+            <option value="Esquerdo">Esquerdo</option>
+            <option value="Bilateral">Bilateral</option>
+          </select>
+          
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={respostas.jejumConfirmado} onChange={e => setRespostas({...respostas, jejumConfirmado: e.target.checked})} />
+            Jejum Confirmado?
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={respostas.termoConsentimento} onChange={e => setRespostas({...respostas, termoConsentimento: e.target.checked})} />
+            Termo de Consentimento Assinado?
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div className="botoes-navegacao" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+      <button className="btn-voltar" onClick={() => setPassoMedico(2)}>⬅️ Voltar</button>
+      <button className="btn-proximo" onClick={() => {
+        setDadosSimulacao({...dadosSimulacao, lado: respostas.ladoOperado});
+        setPassoMedico(4);
+      }}>Gerar Relatório Final ➡️</button>
+    </div>
+  </div>
+)}
 
             {passoMedico === 4 && (
               <div className="card-portal">
