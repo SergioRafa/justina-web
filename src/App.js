@@ -1,6 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+const CASOS_CLINICOS = {
+  crianca: { nome: "Enzo, 8 anos", descricao: "Pediátrico - Refluxo Vesicoureteral", risco: "Médio" },
+  homem: { nome: "Sr. João, 55 anos", descricao: "Adulto - Cálculo Renal Coraliforme", risco: "Alto" },
+  mulher: { nome: "Dra. Helena, 42 anos", descricao: "Adulto - Nefrectomia Parcial (Doadora)", risco: "Baixo" }
+};
+import React, { useState } from 'react';
+
+function PortalMedico() {
+  const [passo, setPasso] = useState(1);
+  const [dadosMedico, setDadosMedico] = useState({ crm: '', email: '', procedimento: '', lado: '', paciente: '' });
+
+  const proximo = () => setPasso(passo + 1);
+
+  return (
+    <div className="portal-medico">
+      {/* PASSO 1: IDENTIFICAÇÃO */}
+      {passo === 1 && (
+        <div className="card-portal">
+          <h2>🏥 Acesso Restrito: Médico</h2>
+          <input type="text" placeholder="CRM (Ex: 123456-SP)" onChange={e => setDadosMedico({...dadosMedico, crm: e.target.value})} />
+          <input type="email" placeholder="E-mail para Feedback" onChange={e => setDadosMedico({...dadosMedico, email: e.target.value})} />
+          <button className="btn-portal" onClick={proximo}>Entrar no Sistema</button>
+        </div>
+      )}
+
+      {/* PASSO 2: ESCOLHA DO CASO */}
+      {passo === 2 && (
+        <div className="card-portal">
+          <h2>Selecione o Paciente</h2>
+          <div className="selecao-pacientes">
+            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Criança'}); proximo(); }}>👶 Criança</button>
+            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Homem'}); proximo(); }}>👨 Homem</button>
+            <button onClick={() => { setDadosMedico({...dadosMedico, paciente: 'Mulher'}); proximo(); }}>👩 Mulher</button>
+          </div>
+        </div>
+      )}
+
+      {/* PASSO 3: CONFIGURAÇÃO CIRÚRGICA */}
+      {passo === 3 && (
+        <div className="card-portal">
+          <h2>Configurar Cirurgia: {dadosMedico.paciente}</h2>
+          <select onChange={e => setDadosMedico({...dadosMedico, procedimento: e.target.value})}>
+            <option>Procedimento...</option>
+            <option>Nefrectomia</option>
+            <option>Transplante Renal</option>
+            <option>Ureteroscopia</option>
+          </select>
+          <div className="lado-botoes">
+            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Direito'})}>Direito</button>
+            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Esquerdo'})}>Esquerdo</button>
+            <button onClick={() => setDadosMedico({...dadosMedico, lado: 'Bilateral'})}>Bilateral</button>
+          </div>
+          <p>Lado Selecionado: <strong>{dadosMedico.lado}</strong></p>
+          <button className="btn-portal" onClick={proximo}>Verificar Checklist</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   // --- ESTADOS ---
   const [cirurgias, setCirurgias] = useState([]);
