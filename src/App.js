@@ -11,7 +11,7 @@ function App() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const resposta = await fetch("http://localhost:8080/api/cirurgias");
+        const resposta = await fetch("http://localhost:8081/api/cirurgias");
         if (resposta.ok) {
           const dados = await resposta.json();
           setCirurgias(dados);
@@ -53,7 +53,7 @@ function App() {
 
     try {
       // Envia para o Java
-      const resposta = await fetch("http://localhost:8080/api/cirurgias", {
+      const resposta = await fetch("http://localhost:8081/api/cirurgias", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(novaCirurgia)
