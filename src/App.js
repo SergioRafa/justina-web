@@ -48,6 +48,17 @@ function App() {
     };
     carregarDados();
   }, []);
+const resetarSimulacao = () => {
+  // Limpa o questionário para o estado original
+  setRespostas({
+    hemograma: '', coagulograma: '', funcaoRenal: '', eletrolitos: '',
+    tomografiaAbdome: '', avaliacaoAnestesica: '', ladoOperado: 'Direito',
+    jejumConfirmado: false, termoConsentimento: false, riscoCirurgico: ''
+  });
+  // Volta para o primeiro passo
+  setPassoMedico(1);
+};
+
 
   return (
     <div className="App">
@@ -90,26 +101,41 @@ function App() {
               </div>
             )}
 
-            {passoMedico === 2 && (
-              <div className="card-portal">
-                <h2>Escolha o Paciente</h2>
-                <div className="grade-pacientes">
-                  {Object.keys(CASOS_CLINICOS).map(chave => (
-                    <button key={chave} className="card-paciente" onClick={() => { 
-                      setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
-                      setPassoMedico(3);
-                    }}>
-                      <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
-                      <strong>{CASOS_CLINICOS[chave].nome}</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          {passoMedico === 3 && (
+          {/* PASSO 2: ESCOLHA DO PACIENTE */}
+<div className="grade-pacientes">
+  {Object.keys(CASOS_CLINICOS).map(chave => (
+    <button key={chave} className="card-paciente" onClick={() => { 
+      // 1. LIMPA O FORMULÁRIO ANTES DE TUDO
+      setRespostas({
+        hemograma: '', coagulograma: '', funcaoRenal: '', eletrolitos: '',
+        tomografiaAbdome: '', avaliacaoAnestesica: '', ladoOperado: 'Direito',
+        jejumConfirmado: false, termoConsentimento: false, riscoCirurgico: ''
+      });
+      // 2. DEFINE O NOVO PACIENTE
+      setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
+      // 3. AVANÇA O PASSO
+      setPassoMedico(3);
+    }}>
+      <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
+      <strong>{CASOS_CLINICOS[chave].nome}</strong>
+    </button>
+  ))}
+</div>
+ {passoMedico === 3 && (
   <div className="card-portal">
-    <h2>📋 Checklist Clínico: {dadosSimulacao.paciente}</h2>
+    {/* Título único que muda de cor: Laranja para Enzo (alerta pediátrico), azul escuro para os outros */}
+    <h2 style={{ 
+      color: dadosSimulacao.paciente.includes("Enzo") ? "#e67e22" : "#2c3e50",
+      transition: "0.3s" 
+    }}>
+      📋 Checklist Técnico: {dadosSimulacao.paciente}
+    </h2>
+    
+    <div className="formulario-scroll">
+      
+    </div>
+  </div>
+)}
     
     <div className="formulario-scroll" style={{ textAlign: 'left', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
       
@@ -177,7 +203,7 @@ function App() {
                     <p>✅ Checklist validado com sucesso.</p>
                   </div>
                 </div>
-                <button className="btn-portal" onClick={() => setPassoMedico(1)}>Reiniciar</button>
+              <button className="btn-portal" onClick={resetarSimulacao}>🔄 Iniciar Nova Simulação</button>
               </div>
             )}
           </div>
