@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// 1. DADOS DOS CASOS CLÍNICOS (FORA DAS FUNÇÕES)
 const CASOS_CLINICOS = {
   crianca: { nome: "Enzo, 8 anos", icone: "👶", descricao: "Pediátrico - Refluxo", risco: "Médio" },
   homem: { nome: "Sr. João, 55 anos", icone: "👨", descricao: "Adulto - Cálculo Renal", risco: "Alto" },
@@ -9,26 +8,15 @@ const CASOS_CLINICOS = {
 };
 
 function App() {
-  // --- ESTADOS GERAIS ---
-  const [abaAtiva, setAbaAtiva] = useState('mapa'); // 'mapa' ou 'medico'
+  const [abaAtiva, setAbaAtiva] = useState('mapa');
   const [cirurgias, setCirurgias] = useState([]);
-  
-  // Estados do Agendamento
   const [paciente, setPaciente] = useState('');
   const [procedimento, setProcedimento] = useState('Nefrectomia');
-  const [rim, setRim] = useState('Direito');
-
-  // Estados do Portal do Médico
   const [passoMedico, setPassoMedico] = useState(1);
   const [dadosSimulacao, setDadosSimulacao] = useState({ crm: '', email: '', paciente: '', procedimento: '', lado: '' });
-
-  // Estados do Checklist (Mapa Cirúrgico)
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
-  const [respostas, setRespostas] = useState({
-    hemograma: '', funcaoRenal: '', jejumConfirmado: false, termoConsentimento: false
-  });
 
-  // --- CARREGAR DADOS DO JAVA ---
+  // --- CARREGAR DADOS ---
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -38,26 +26,19 @@ function App() {
           setCirurgias(dados);
         }
       } catch (erro) {
-        console.error("Servidor Offline. Usando modo demonstração.");
+        console.error("Servidor Offline.");
       }
     };
     carregarDados();
   }, []);
 
-  // --- FUNÇÕES DO MAPA ---
   const agendarCirurgia = (e) => {
     e.preventDefault();
-    const nova = { id: Date.now(), paciente: paciente.toUpperCase(), procedimento, rim, status: "Agendado" };
+    const nova = { id: Date.now(), paciente: paciente.toUpperCase(), procedimento, rim: 'Direito', status: "Agendado" };
     setCirurgias([nova, ...cirurgias]);
     setPaciente('');
   };
 
-  const alternarStatus = (id) => {
-    const novosStatus = { "Agendado": "Em Sala", "Em Sala": "Concluído", "Concluído": "Agendado" };
-    setCirurgias(cirurgias.map(c => c.id === id ? { ...c, status: novosStatus[c.status] } : c));
-  };
-
-  // --- RENDERIZAÇÃO ---
   return (
     <div className="App">
       <header className="hospital-header">
@@ -69,8 +50,7 @@ function App() {
       </header>
 
       <main className="container">
-        
-        {/* CONTEÚDO 1: MAPA CIRÚRGICO */}
+        {/* ABA: MAPA CIRÚRGICO */}
         {abaAtiva === 'mapa' && (
           <div className="secao-mapa">
             <form className="agendamento-form" onSubmit={agendarCirurgia}>
@@ -90,26 +70,21 @@ function App() {
                 <div key={c.id} className="card">
                   <div className="info">
                     <h3>{c.procedimento}</h3>
-                    <p>{c.paciente} | <strong>{c.rim}</strong></p>
+                    <p>{c.paciente}</p>
                   </div>
-                  <div className="acoes">
-                    <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
-                    <span className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`} onClick={() => alternarStatus(c.id)}>
-                      {c.status}
-                    </span>
-                  </div>
+                  <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* CONTEÚDO 2: PORTAL DO MÉDICO (O SEU NOVO SIMULADOR) */}
+        {/* ABA: PORTAL DO MÉDICO */}
         {abaAtiva === 'medico' && (
           <div className="secao-medico">
             {passoMedico === 1 && (
               <div className="card-portal">
-                <h2>🩺 Identificação do Especialista</h2>
+                <h2>🩺 Identificação</h2>
                 <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
                 <input type="email" placeholder="E-mail" onChange={e => setDadosSimulacao({...dadosSimulacao, email: e.target.value})} />
                 <button onClick={() => setPassoMedico(2)}>Entrar</button>
@@ -127,7 +102,6 @@ function App() {
                     }}>
                       <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
                       <strong>{CASOS_CLINICOS[chave].nome}</strong>
-                      <small>{CASOS_CLINICOS[chave].descricao}</small>
                     </button>
                   ))}
                 </div>
@@ -136,19 +110,38 @@ function App() {
 
             {passoMedico === 3 && (
               <div className="card-portal">
-                <h2>Caso: {dadosSimulacao.paciente}</h2>
-                <p>Escolha o Lado da Cirurgia:</p>
+                <h2>Configurar: {dadosSimulacao.paciente}</h2>
                 <div className="lado-botoes">
                   <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
                   <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
+                  <button onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Bilateral'})}>Bilateral</button>
                 </div>
-                <button className="btn-voltar" onClick={() => setPassoMedico(2)}>Voltar</button>
+                <p>Selecionado: <strong>{dadosSimulacao.lado}</strong></p>
+                {dadosSimulacao.lado && <button onClick={() => setPassoMedico(4)}>Gerar Feedback</button>}
+              </div>
+            )}
+
+            {/* PASSO 4: FEEDBACK FINAL */}
+            {passoMedico === 4 && (
+              <div className="card-portal">
+                <h2>📊 Resultado Final</h2>
+                <div className="resultado-caixa">
+                  <p><strong>CRM:</strong> {dadosSimulacao.crm}</p>
+                  <p><strong>Paciente:</strong> {dadosSimulacao.paciente}</p>
+                  <p><strong>Lado:</strong> {dadosSimulacao.lado}</p>
+                  <div className="alerta-clinico">
+                    {dadosSimulacao.paciente.includes("Enzo") && <p>⚠️ Cuidado: Paciente Pediátrico!</p>}
+                    {dadosSimulacao.lado === "Bilateral" && <p>🚨 Risco: Cirurgia Bilateral!</p>}
+                    <p>✅ Protocolo de segurança Justina Renal validado.</p>
+                  </div>
+                </div>
+                <button onClick={() => setPassoMedico(1)}>Reiniciar</button>
               </div>
             )}
           </div>
         )}
 
-        {/* MODAL CHECKLIST (O MESMO DE ANTES) */}
+        {/* MODAL CHECKLIST */}
         {pacienteSelecionado && (
           <div className="modal-sobreposicao">
             <div className="modal-conteudo">
