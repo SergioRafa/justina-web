@@ -200,10 +200,8 @@ function App() {
                 <button onClick={() => setPassoMedico(1)}>Reiniciar</button>
               </div>
             )}
-          </div>
-        )}
-
-        {/* MODAL CHECKLIST */}
+      
+        
         {pacienteSelecionado && (
           <div className="modal-sobreposicao">
             <div className="modal-conteudo">
