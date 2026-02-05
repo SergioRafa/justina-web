@@ -9,24 +9,35 @@ const CASOS_CLINICOS = {
 
 
 
-
-
 function App() {
+  // --- ESTADOS GERAIS ---
   const [busca, setBusca] = useState('');
   const [abaAtiva, setAbaAtiva] = useState('mapa');
   const [cirurgias, setCirurgias] = useState([]);
   const [paciente, setPaciente] = useState('');
   const [procedimento, setProcedimento] = useState('Nefrectomia');
   const [passoMedico, setPassoMedico] = useState(1);
-  const [dadosSimulacao, setDadosSimulacao] = useState({ crm: '', email: '', paciente: '', procedimento: '', lado: '' });
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
 
-  const cirurgiasFiltradas = cirurgias.filter(c => 
-  c.paciente.toLowerCase().includes(busca.toLowerCase()) ||
-  c.procedimento.toLowerCase().includes(busca.toLowerCase())
-);
+  // --- ESTADOS DO SIMULADOR (DADOS DO MÉDICO) ---
+  const [dadosSimulacao, setDadosSimulacao] = useState({ 
+    crm: '', email: '', paciente: '', procedimento: '', lado: '' 
+  });
 
-  // --- CARREGAR DADOS ---
+  // --- O QUESTIONÁRIO QUE VOCÊ CRIOU ---
+  const [respostas, setRespostas] = useState({
+    hemograma: '', coagulograma: '', funcaoRenal: '', eletrolitos: '',
+    tomografiaAbdome: '', avaliacaoAnestesica: '', ladoOperado: 'Direito',
+    jejumConfirmado: false, termoConsentimento: false, riscoCirurgico: ''
+  });
+
+  // Filtro de Busca (Protegido contra erro de carregamento)
+  const cirurgiasFiltradas = (cirurgias || []).filter(c => 
+    c.paciente?.toLowerCase().includes(busca.toLowerCase()) ||
+    c.procedimento?.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  // Carregar dados (useEffect) - Mantendo sua lógica de LocalStorage
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -36,18 +47,12 @@ function App() {
           setCirurgias(dados);
         }
       } catch (erro) {
-        console.error("Servidor Offline.");
+        const salvos = localStorage.getItem('justina_cirurgias');
+        if (salvos) setCirurgias(JSON.parse(salvos));
       }
     };
     carregarDados();
   }, []);
-
-  const agendarCirurgia = (e) => {
-    e.preventDefault();
-    const nova = { id: Date.now(), paciente: paciente.toUpperCase(), procedimento, rim: 'Direito', status: "Agendado" };
-    setCirurgias([nova, ...cirurgias]);
-    setPaciente('');
-  };
 
   return (
     <div className="App">
@@ -60,159 +65,99 @@ function App() {
       </header>
 
       <main className="container">
-        {/* ABA: MAPA CIRÚRGICO */}
         {abaAtiva === 'mapa' && (
           <div className="secao-mapa">
-            <form className="agendamento-form" onSubmit={agendarCirurgia}>
-              <h3>Novo Agendamento</h3>
-              <div className="form-row">
-                <input type="text" placeholder="PACIENTE" value={paciente} onChange={(e) => setPaciente(e.target.value)} />
-                <select value={procedimento} onChange={(e) => setProcedimento(e.target.value)}>
-                  <option>Nefrectomia</option>
-                  <option>Transplante Renal</option>
-                </select>
-                <button type="submit">Agendar</button>
-              </div>
-            </form>
-
-            <div className="lista-cirurgias">
-              {cirurgias.map(c => (
-                <div key={c.id} className="card">
-                  <div className="info">
-                    <h3>{c.procedimento}</h3>
-                    <p>{c.paciente}</p>
-                  </div>
-                  <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
-                </div>
-              ))}
-            </div>
+             {/* Barra de Busca que adicionamos ontem */}
+             <input 
+               className="input-busca" 
+               placeholder="🔍 BUSCAR PACIENTE..." 
+               onChange={(e) => setBusca(e.target.value)} 
+             />
+             <div className="lista-cirurgias">
+               {cirurgiasFiltradas.map(c => (
+                 <div key={c.id} className="card">
+                   <h3>{c.procedimento}</h3>
+                   <p>{c.paciente}</p>
+                 </div>
+               ))}
+             </div>
           </div>
         )}
 
-     {/* ABA: PORTAL DO MÉDICO */}
-{abaAtiva === 'medico' && (
-  <div className="secao-medico">
-    {passoMedico === 1 && (
-      <div className="card-portal">
-        <h2>🩺 Identificação</h2>
-        <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
-        <input type="email" placeholder="E-mail" onChange={e => setDadosSimulacao({...dadosSimulacao, email: e.target.value})} />
-        <button className="btn-portal" onClick={() => setPassoMedico(2)}>Entrar</button>
-      </div>
-    )}
+        {abaAtiva === 'medico' && (
+          <div className="secao-medico">
+            {/* PASSO 1: LOGIN */}
+            {passoMedico === 1 && (
+              <div className="card-portal">
+                <h2>🩺 Acesso Médico</h2>
+                <input type="text" placeholder="CRM" onChange={e => setDadosSimulacao({...dadosSimulacao, crm: e.target.value})} />
+                <button onClick={() => setPassoMedico(2)}>Próximo</button>
+              </div>
+            )}
 
-    {passoMedico === 2 && (
-      <div className="card-portal">
-        <h2>Selecione o Paciente</h2>
-        <div className="grade-pacientes">
-          {Object.keys(CASOS_CLINICOS).map(chave => (
-            <button key={chave} className="card-paciente" onClick={() => { 
-              setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
-              setPassoMedico(3);
-            }}>
-              <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
-              <strong>{CASOS_CLINICOS[chave].nome}</strong>
-            </button>
-          ))}
-        </div>
-        <button className="btn-voltar" style={{marginTop: '20px'}} onClick={() => setPassoMedico(1)}>⬅️ Sair</button>
-      </div>
-    )}
+            {/* PASSO 2: ESCOLHA DO PACIENTE (CARDS) */}
+            {passoMedico === 2 && (
+              <div className="card-portal">
+                <h2>Escolha o Paciente</h2>
+                <div className="grade-pacientes">
+                  {Object.keys(CASOS_CLINICOS).map(chave => (
+                    <button key={chave} className="card-paciente" onClick={() => { 
+                      setDadosSimulacao({...dadosSimulacao, paciente: CASOS_CLINICOS[chave].nome});
+                      setPassoMedico(3);
+                    }}>
+                      <span className="icone-grande">{CASOS_CLINICOS[chave].icone}</span>
+                      <strong>{CASOS_CLINICOS[chave].nome}</strong>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-    {passoMedico === 3 && (
-      <div className="card-portal">
-        <h2>Configurar: {dadosSimulacao.paciente}</h2>
-        <p>Escolha a Lateralidade:</p>
-        
-        <div className="lado-botoes">
-          <button className={`btn-lado ${dadosSimulacao.lado === 'Direito' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
-          <button className={`btn-lado ${dadosSimulacao.lado === 'Esquerdo' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
-          <button className={`btn-lado ${dadosSimulacao.lado === 'Bilateral' ? 'selecionado' : ''}`} onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Bilateral'})}>Bilateral</button>
-        </div>
+            {/* PASSO 3: O SEU QUESTIONÁRIO TÉCNICO */}
+            {passoMedico === 3 && (
+              <div className="card-portal">
+                <h2>📋 Checklist Técnico: {dadosSimulacao.paciente}</h2>
+                <div className="formulario-scroll">
+                  <fieldset>
+                    <legend>Exames</legend>
+                    <input type="text" placeholder="Hemograma" value={respostas.hemograma} onChange={e => setRespostas({...respostas, hemograma: e.target.value})} />
+                    <input type="text" placeholder="Função Renal" value={respostas.funcaoRenal} onChange={e => setRespostas({...respostas, funcaoRenal: e.target.value})} />
+                  </fieldset>
+                  <fieldset>
+                    <legend>Lateralidade</legend>
+                    <select value={respostas.ladoOperado} onChange={e => setRespostas({...respostas, ladoOperado: e.target.value})}>
+                      <option value="Direito">Direito</option>
+                      <option value="Esquerdo">Esquerdo</option>
+                      <option value="Bilateral">Bilateral</option>
+                    </select>
+                  </fieldset>
+                </div>
+                <div className="botoes-navegacao">
+                  <button onClick={() => setPassoMedico(2)}>Voltar</button>
+                  <button onClick={() => {
+                    setDadosSimulacao({...dadosSimulacao, lado: respostas.ladoOperado});
+                    setPassoMedico(4);
+                  }}>Ver Resultado</button>
+                </div>
+              </div>
+            )}
 
-        <div className="botoes-navegacao" style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-          <button className="btn-voltar" onClick={() => setPassoMedico(2)}>⬅️ Voltar</button>
-          {dadosSimulacao.lado && (
-            <button className="btn-proximo" onClick={() => setPassoMedico(4)}>Gerar Feedback ➡️</button>
-          )}
-        </div>
-      </div>
-    )}
-
-    {passoMedico === 4 && (
-      <div className="card-portal">
-        <h2>📊 Resultado Final</h2>
-        <div className="resultado-caixa">
-          <p><strong>CRM:</strong> {dadosSimulacao.crm}</p>
-          <p><strong>Paciente:</strong> {dadosSimulacao.paciente}</p>
-          <p><strong>Lado:</strong> {dadosSimulacao.lado}</p>
-          <div className="alerta-clinico">
-            {dadosSimulacao.paciente.includes("Enzo") && <p>⚠️ Cuidado: Paciente Pediátrico! Ajustar dosagem de contraste.</p>}
-            {dadosSimulacao.lado === "Bilateral" && <p>🚨 Risco: Cirurgia Bilateral detectada. Necessário equipe dupla.</p>}
-            <p>✅ Protocolo de segurança Justina Renal validado.</p>
-          </div>
-        </div>
-        <button className="btn-portal" style={{backgroundColor: '#3498db'}} onClick={() => { setPassoMedico(1); setDadosSimulacao({...dadosSimulacao, lado: ''}); }}>🔄 Nova Simulação</button>
-      </div>
-    )}
-  </div>
-)}
-          
-
-          {/* PASSO 3: CONFIGURAÇÃO CIRÚRGICA */}
-{passoMedico === 3 && (
-  <div className="card-portal">
-    <h2>Configurar: {dadosSimulacao.paciente}</h2>
-    
-    <div className="lado-botoes">
-      <button className="btn-lado" onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Direito'})}>Direito</button>
-      <button className="btn-lado" onClick={() => setDadosSimulacao({...dadosSimulacao, lado: 'Esquerdo'})}>Esquerdo</button>
-    </div>
-
-    <div className="botoes-navegacao" style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-      <button className="btn-voltar" onClick={() => setPassoMedico(2)}>
-        ⬅️ Voltar
-      </button>
-      
-      {dadosSimulacao.lado && (
-        <button className="btn-proximo" onClick={() => setPassoMedico(4)}>
-          Gerar Feedback ➡️
-        </button>
-      )}
-    </div>
-  </div>
-)}
-
-            {/* PASSO 4: FEEDBACK FINAL */}
+            {/* PASSO 4: FEEDBACK */}
             {passoMedico === 4 && (
               <div className="card-portal">
-                <h2>📊 Resultado Final</h2>
-                <div className="resultado-caixa">
-                  <p><strong>CRM:</strong> {dadosSimulacao.crm}</p>
-                  <p><strong>Paciente:</strong> {dadosSimulacao.paciente}</p>
-                  <p><strong>Lado:</strong> {dadosSimulacao.lado}</p>
-                  <div className="alerta-clinico">
-                    {dadosSimulacao.paciente.includes("Enzo") && <p>⚠️ Cuidado: Paciente Pediátrico!</p>}
-                    {dadosSimulacao.lado === "Bilateral" && <p>🚨 Risco: Cirurgia Bilateral!</p>}
-                    <p>✅ Protocolo de segurança Justina Renal validado.</p>
-                  </div>
-                </div>
+                <h2>Resumo da Simulação</h2>
+                <p>Paciente: {dadosSimulacao.paciente}</p>
+                <p>Lado: {dadosSimulacao.lado}</p>
+                <p>Hemograma: {respostas.hemograma}</p>
                 <button onClick={() => setPassoMedico(1)}>Reiniciar</button>
               </div>
             )}
-      
-        
-        {pacienteSelecionado && (
-          <div className="modal-sobreposicao">
-            <div className="modal-conteudo">
-              <h2>Checklist: {pacienteSelecionado.paciente}</h2>
-              <button onClick={() => setPacienteSelecionado(null)}>Fechar</button>
-            </div>
           </div>
         )}
       </main>
     </div>
   );
 }
+
 
 export default App;
