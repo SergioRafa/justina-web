@@ -7,7 +7,12 @@ const CASOS_CLINICOS = {
   mulher: { nome: "Dra. Helena, 42 anos", icone: "👩", descricao: "Adulto - Nefrectomia", risco: "Baixo" }
 };
 
+
+
+
+
 function App() {
+  const [busca, setBusca] = useState('');
   const [abaAtiva, setAbaAtiva] = useState('mapa');
   const [cirurgias, setCirurgias] = useState([]);
   const [paciente, setPaciente] = useState('');
@@ -15,6 +20,11 @@ function App() {
   const [passoMedico, setPassoMedico] = useState(1);
   const [dadosSimulacao, setDadosSimulacao] = useState({ crm: '', email: '', paciente: '', procedimento: '', lado: '' });
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
+
+  const cirurgiasFiltradas = cirurgias.filter(c => 
+  c.paciente.toLowerCase().includes(busca.toLowerCase()) ||
+  c.procedimento.toLowerCase().includes(busca.toLowerCase())
+);
 
   // --- CARREGAR DADOS ---
   useEffect(() => {
