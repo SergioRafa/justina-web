@@ -2,12 +2,28 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
+  // --- ESTADOS ---
   const [cirurgias, setCirurgias] = useState([]);
   const [paciente, setPaciente] = useState('');
   const [procedimento, setProcedimento] = useState('Nefrectomia');
   const [rim, setRim] = useState('Direito');
+  
+  // Novos estados para o Checklist
+  const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
+  const [respostas, setRespostas] = useState({
+    hemograma: '',
+    coagulograma: '',
+    funcaoRenal: '',
+    eletrolitos: '',
+    tomografiaAbdome: '',
+    avaliacaoAnestesica: '',
+    ladoOperado: 'Direito',
+    jejumConfirmado: false,
+    termoConsentimento: false,
+    riscoCirurgico: ''
+  });
 
-  // 1. CARREGAR DADOS DO JAVA (GET)
+  // --- 1. CARREGAR DADOS (GET) ---
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -28,7 +44,7 @@ function App() {
     carregarDados();
   }, []);
 
-  // 2. SALVAR NO JAVA (POST)
+  // --- 2. SALVAR CIRURGIA (POST) ---
   const agendarCirurgia = async (e) => {
     e.preventDefault();
     const nomeMaiusculo = paciente.trim().toUpperCase();
@@ -44,15 +60,9 @@ function App() {
       return;
     }
 
-    const novaCirurgia = {
-      paciente: nomeMaiusculo,
-      procedimento,
-      rim,
-      status: "Agendado"
-    };
+    const novaCirurgia = { paciente: nomeMaiusculo, procedimento, rim, status: "Agendado" };
 
     try {
-      // Envia para o Java
       const resposta = await fetch("http://localhost:8081/api/cirurgias", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,28 +70,44 @@ function App() {
       });
 
       if (resposta.ok) {
-        const cirurgiaSalvaNoBanco = await resposta.json();
-        setCirurgias([cirurgiaSalvaNoBanco, ...cirurgias]);
+        const salva = await resposta.json();
+        setCirurgias([salva, ...cirurgias]);
         setPaciente('');
-      } else {
-        alert("Erro ao salvar no banco de dados.");
       }
     } catch (erro) {
-      console.error("Erro de conexão:", erro);
-      // Plano B: Se o Java falhar, salva só na tela e no localStorage
       const fallback = { ...novaCirurgia, id: Date.now() };
-      const novaLista = [fallback, ...cirurgias];
-      setCirurgias(novaLista);
-      localStorage.setItem('justina_cirurgias', JSON.stringify(novaLista));
+      setCirurgias([fallback, ...cirurgias]);
       setPaciente('');
     }
   };
 
-  // 3. EXCLUIR (DELETE) - Opcional: Integrar com Java depois
+  // --- 3. SALVAR CHECKLIST NO JAVA ---
+  const salvarChecklistNoJava = async () => {
+    const dadosParaEnviar = {
+      ...respostas,
+      cirurgia: { id: pacienteSelecionado.id }
+    };
+
+    try {
+      const res = await fetch("http://localhost:8081/api/checklists", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dadosParaEnviar)
+      });
+
+      if (res.ok) {
+        alert("✅ Checklist salvo com sucesso no banco de dados!");
+        setPacienteSelecionado(null);
+      }
+    } catch (error) {
+      alert("❌ Erro ao conectar com o servidor.");
+    }
+  };
+
+  // --- OUTRAS FUNÇÕES ---
   const excluirCirurgia = (id) => {
     const listaFiltrada = cirurgias.filter(c => c.id !== id);
     setCirurgias(listaFiltrada);
-    localStorage.setItem('justina_cirurgias', JSON.stringify(listaFiltrada));
   };
 
   const alternarStatus = (id) => {
@@ -99,6 +125,7 @@ function App() {
       </header>
 
       <main className="container">
+        {/* FORMULÁRIO DE AGENDAMENTO */}
         <form className="agendamento-form" onSubmit={agendarCirurgia}>
           <h3>Novo Agendamento</h3>
           <div className="form-row">
@@ -123,10 +150,9 @@ function App() {
           </div>
         </form>
 
+        {/* LISTA DE CARDS */}
         <div className="lista-cirurgias">
           <h2>Mapa Cirúrgico Atual</h2>
-          {cirurgias.length === 0 && <p style={{textAlign: 'center', color: '#666'}}>Nenhuma cirurgia agendada.</p>}
-          
           {cirurgias.map(c => (
             <div key={c.id || Math.random()} className="card">
               <div className="info">
@@ -134,10 +160,10 @@ function App() {
                 <p>Paciente: <strong>{c.paciente}</strong> | Lado: {c.rim}</p>
               </div>
               <div className="acoes">
+                <button className="btn-checklist" onClick={() => setPacienteSelecionado(c)}>📋 Checklist</button>
                 <span 
                   className={`status-tag ${c.status.toLowerCase().replace(' ', '-')}`}
                   onClick={() => alternarStatus(c.id)}
-                  style={{cursor: 'pointer'}}
                 >
                   {c.status}
                 </span>
@@ -146,6 +172,31 @@ function App() {
             </div>
           ))}
         </div>
+
+        {/* MODAL DO CHECKLIST (APARECE SÓ QUANDO SELECIONADO) */}
+        {pacienteSelecionado && (
+          <div className="modal-sobreposicao">
+            <div className="modal-conteudo">
+              <h2>📋 Checklist: {pacienteSelecionado.paciente}</h2>
+              <div className="formulario-scroll">
+                <fieldset>
+                  <legend>🩸 Laboratório</legend>
+                  <input type="text" placeholder="Hemograma" onChange={(e) => setRespostas({...respostas, hemograma: e.target.value})} />
+                  <input type="text" placeholder="Função Renal" onChange={(e) => setRespostas({...respostas, funcaoRenal: e.target.value})} />
+                </fieldset>
+                <fieldset>
+                  <legend>🛡️ Segurança</legend>
+                  <label><input type="checkbox" onChange={(e) => setRespostas({...respostas, jejumConfirmado: e.target.checked})} /> Jejum?</label>
+                  <label><input type="checkbox" onChange={(e) => setRespostas({...respostas, termoConsentimento: e.target.checked})} /> Termo Assinado?</label>
+                </fieldset>
+              </div>
+              <div className="botoes-modal">
+                <button className="btn-salvar" onClick={salvarChecklistNoJava}>Salvar</button>
+                <button className="btn-cancelar" onClick={() => setPacienteSelecionado(null)}>Sair</button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
