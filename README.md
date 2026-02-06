@@ -1,70 +1,71 @@
-# Getting Started with Create React App
+🏥 Projeto Justina Renal - Checklist de Segurança Cirúrgica
+Este projeto é uma aplicação React voltada para a segurança do paciente em procedimentos urológicos. Ele simula o fluxo de um médico cirurgião, desde o acesso por CRM até a validação de um checklist técnico baseado no protocolo da OMS.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+🚀 Status Atual (Frontend)
+Login: Acesso via CRM (Simulação).
 
-## Available Scripts
+Seleção de Casos: Integração com 3 perfis clínicos (Pediátrico, Adulto e Idoso).
 
-In the project directory, you can run:
+Checklist Técnico: Formulário completo com 3 opções (Sim / Não / Nenhum) para exames laboratoriais, imagem e lateralidade.
 
-### `npm start`
+Lógica de Alerta: Sistema inteligente que detecta automaticamente pacientes pediátricos (Enzo) e riscos de lateralidade (Bilateral).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Relatório Final: Geração de resumo estruturado com validação de status (Apto/Pendente).
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+🏗️ Arquitetura de Dados
+Estrutura do Objeto de Respostas:
 
-### `npm test`
+{
+  hemograma: string,        // 'Sim' | 'Não' | 'Nenhum'
+  coagulograma: string,
+  funcaoRenal: string,
+  eletrolitos: string,
+  tomografiaAbdome: string,
+  avaliacaoAnestesica: string,
+  ladoOperado: string,      // 'Direito' | 'Esquerdo' | 'Bilateral'
+  jejumConfirmado: boolean,
+  termoConsentimento: boolean,
+  riscoCirurgico: string    // Ex: 'ASA II'
+}
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+🛠️ Guia de Integração para o Backend (Turma de Dev)
+O próximo passo é tornar esses dados persistentes. Atualmente, o useEffect já tenta buscar dados de http://localhost:8081/api/cirurgias.
 
-### `npm run build`
+1. Requisitos do Backend
+Tecnologia Sugerida: Node.js com Express ou Python com Flask/FastAPI.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Banco de Dados: MongoDB ou PostgreSQL.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Endpoints Necessários
+GET /api/casos: Para carregar os dados de CASOS_CLINICOS dinamicamente.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+POST /api/finalizar-checklist: Para salvar o relatório gerado no Passo 4.
 
-### `npm run eject`
+GET /api/cirurgias: Para popular o "Mapa Cirúrgico" na tela inicial.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+3. Exemplo de Payload para o POST:
+Ao clicar em "Gerar Relatório", o backend deve receber:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+{
+  "crm_medico": "123456",
+  "paciente": "Enzo, 8 anos",
+  "data_atendimento": "2023-10-27T10:00:00Z",
+  "checklists": { ...respostas },
+  "apto_para_cirurgia": true
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+📋 Como Rodar o Projeto
+Certifique-se de ter o Node.js instalado.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Na pasta do projeto, execute:
+npm install
+npm start
+O projeto abrirá em http://localhost:3000.
 
-## Learn More
+🎯 Próximos Desafios para a Turma
+Autenticação Real: Validar o CRM em uma API real.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Upload de Documentos: Permitir anexar a imagem da Tomografia ou o Termo assinado.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Exportação em PDF: Adicionar um botão no Passo 4 para baixar o relatório final.
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
